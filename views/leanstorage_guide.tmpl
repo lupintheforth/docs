@@ -900,6 +900,10 @@ todo.fetchInBackground(keys).subscribe(new Observable<AVObject>() {
     public void onComplete() {}
 });
 ```
+
+如果想要确保只刷新已经保存到云端的对象，那么可以用 `fetchIfNeededInBackground` 替换 `fetchInBackground`。
+调用 `fetchIfNeededInBackground` 方法时，如果是本地构造尚未保存的对象，那么不会访问云端，onNext 方法中传入的是本地对象。
+
 {% endif %}
 {% if platform_name === "Swift" %}
 ```swift
@@ -5199,6 +5203,59 @@ AVFile 也提供了清除缓存的方法：
 ```
 {% endif %}
 
+{% if platform_name === "Andorid / Java" %}
+### 下载文件
+
+可以调用 AVFile 的 `getDataInBackground` 或 `getDataStreamInBackground` 方法下载文件：
+
+```java
+avFile.getDataInBackground().subscribe(new Observer<byte[]>() {
+    @Override
+    public void onSubscribe(Disposable d) {}
+
+    @Override
+    public void onNext(byte[] bytes) {
+        Log.d("file data length: " + bytes.length);
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        Log.d("failed to get data. cause: " + e.getMessage());
+    }
+
+    @Override
+    public void onComplete() {}
+});
+
+avFile.getDataStreamInBackground().subscribe(new Observer<InputStream>() {
+    @Override
+    public void onSubscribe(Disposable d) {}
+
+    @Override
+    public void onNext(InputStream inputStream) {
+        try {
+            byte[] buffer = new byte[102400];
+            int read = inputStream.read(buffer);
+            Log.d("file data length: " + read);
+            inputStream.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        Log.d("failed to get data. cause: " + e.getMessage());
+    }
+
+    @Override
+    public void onComplete() {}
+});
+```
+
+除了使用 SDK 提供的方法外，也可以获取 AVFile 的 url 后调用标准库和第三方库下载文件。
+{% endif %}
+
 ### 删除文件
 
 下面的代码从云端删除一个文件：
@@ -7384,7 +7441,7 @@ user.logIn(authData: authData, platform: .weixin) { (result) in
 }
 ```
 
-云端会自动验证部分服务的 access token 的有效性以防止伪造请求。如果验证失败，云端会返回 `invalid authData` 错误，关联不会被建立。对于云端无法识别的服务，你需要自己去验证 access token 的有效性。如果不希望云端自动验证 access token，可以在 [控制台 > 存储 > 设置](/dashboard/storage.html?appid={{appid}}#/storage/conf) 里面取消勾选 **第三方登录时，验证用户 AccessToken 合法性**。
+云端会自动验证部分服务的 access token 的有效性以防止伪造请求。如果验证失败，云端会返回 `invalid authData` 错误，关联不会被建立。对于云端无法识别的服务，你需要自己去验证 access token 的有效性（通过 [onLogin hook 函数](leanengine_cloudfunction_guide-node.html#onLogin)）。如果不希望云端自动验证 access token，可以在 [控制台 > 存储 > 设置](/dashboard/storage.html?appid={{appid}}#/storage/conf) 里面取消勾选 **第三方登录时，验证用户 AccessToken 合法性**。
 
 {% if platform_name === "Objective-C" or platform_name === "JavaScript" or platform_name === "Swift" or platform_name === "Android / Java" %}
 #### 扩展需求
